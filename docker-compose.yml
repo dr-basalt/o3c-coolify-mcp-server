@@ -6,10 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
     image: o3c-coolify-mcp-server:latest
-    container_name: coolify-mcp-server
     restart: unless-stopped
-    ports:
-      - "${PORT:-3000}:3000"
+    # Don't expose ports directly - let Coolify/Traefik handle routing
+    # ports:
+    #   - "${PORT:-3000}:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -35,10 +37,9 @@ services:
     networks:
       - mcp-network
 
-  # Optional: Traefik reverse proxy for production
+  # Optional: Traefik reverse proxy for standalone deployment
   traefik:
     image: traefik:v3.0
-    container_name: traefik
     restart: unless-stopped
     profiles:
       - with-traefik
