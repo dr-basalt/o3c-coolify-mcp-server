@@ -1,0 +1,162 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mcp-server
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coolify-mcp-config
+  namespace: mcp-server
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  HOST: "0.0.0.0"
+  TRANSPORT: "sse"
+  LOG_LEVEL: "info"
+  CORS_ORIGIN: "*"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: coolify-mcp-secrets
+  namespace: mcp-server
+type: Opaque
+stringData:
+  COOLIFY_API_URL: "https://your-coolify-instance.com"
+  COOLIFY_API_TOKEN: "your-api-token-here"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coolify-mcp-server
+  namespace: mcp-server
+  labels:
+    app: coolify-mcp-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: coolify-mcp-server
+  template:
+    metadata:
+      labels:
+        app: coolify-mcp-server
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        runAsGroup: 1001
+        fsGroup: 1001
+      containers:
+        - name: coolify-mcp-server
+          image: ghcr.io/o3c/coolify-mcp-server:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: coolify-mcp-config
+            - secretRef:
+                name: coolify-mcp-secrets
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: coolify-mcp-server
+  namespace: mcp-server
+  labels:
+    app: coolify-mcp-server
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+  selector:
+    app: coolify-mcp-server
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: coolify-mcp-server
+  namespace: mcp-server
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"
+spec:
+  tls:
+    - hosts:
+        - mcp.example.com
+      secretName: coolify-mcp-tls
+  rules:
+    - host: mcp.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: coolify-mcp-server
+                port:
+                  number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coolify-mcp-server
+  namespace: mcp-server
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coolify-mcp-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
