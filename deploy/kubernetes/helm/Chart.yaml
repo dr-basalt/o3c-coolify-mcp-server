@@ -1,0 +1,15 @@
+apiVersion: v2
+name: coolify-mcp-server
+description: Model Context Protocol server for Coolify infrastructure management
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - coolify
+  - mcp
+  - model-context-protocol
+  - devops
+  - deployment
+maintainers:
+  - name: Your Organization
+    email: devops@your-org.com

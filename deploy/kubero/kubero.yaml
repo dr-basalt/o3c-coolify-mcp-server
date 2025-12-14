@@ -1,0 +1,55 @@
+# Kubero Deployment Configuration
+apiVersion: application.kubero.dev/v1alpha1
+kind: KuberoApp
+metadata:
+  name: coolify-mcp-server
+spec:
+  name: coolify-mcp-server
+  pipeline: production
+  phase: production
+
+  gitrepo:
+    provider: github
+    repository: your-org/coolify-mcp-server
+    branch: main
+
+  buildpack: nixpacks
+
+  envVars:
+    - name: NODE_ENV
+      value: production
+    - name: PORT
+      value: "3000"
+    - name: COOLIFY_BASE_URL
+      valueFrom:
+        secretKeyRef:
+          name: coolify-secrets
+          key: base-url
+    - name: COOLIFY_API_TOKEN
+      valueFrom:
+        secretKeyRef:
+          name: coolify-secrets
+          key: api-token
+
+  port:
+    containerPort: 3000
+    protocol: TCP
+
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 512Mi
+    requests:
+      cpu: 500m
+      memory: 256Mi
+
+  autoscale:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  domain:
+    enabled: true
+    host: coolify-mcp.yourdomain.com
+    tls: true

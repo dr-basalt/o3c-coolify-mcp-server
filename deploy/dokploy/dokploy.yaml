@@ -1,0 +1,45 @@
+# Dokploy Deployment Configuration
+version: "1"
+
+project:
+  name: coolify-mcp-server
+
+services:
+  - name: coolify-mcp-server
+    type: application
+
+    source:
+      type: github
+      repository: your-org/coolify-mcp-server
+      branch: main
+
+    build:
+      type: nixpacks
+
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+
+    secrets:
+      - COOLIFY_BASE_URL
+      - COOLIFY_API_TOKEN
+
+    ports:
+      - 3000:3000
+
+    resources:
+      cpu: 1.0
+      memory: 512M
+
+    healthCheck:
+      path: /health
+      interval: 30
+      timeout: 10
+      retries: 3
+
+    domain:
+      - coolify-mcp.yourdomain.com
+
+    ssl:
+      enabled: true
+      provider: letsencrypt

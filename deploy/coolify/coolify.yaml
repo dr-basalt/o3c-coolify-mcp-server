@@ -1,0 +1,52 @@
+# Coolify Deployment Configuration
+# Deploy this application directly on Coolify
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: coolify-mcp-server
+  labels:
+    app: coolify-mcp-server
+
+spec:
+  type: application
+  buildPack: nixpacks
+
+  source:
+    type: git
+    repository: https://github.com/your-org/coolify-mcp-server
+    branch: main
+
+  build:
+    buildCommand: npm run build
+    startCommand: node dist/main.js
+
+  environment:
+    NODE_ENV: production
+    PORT: "3000"
+    # Set these in Coolify UI:
+    # COOLIFY_BASE_URL
+    # COOLIFY_API_TOKEN
+
+  ports:
+    - 3000
+
+  resources:
+    limits:
+      cpu: "1"
+      memory: 512Mi
+    requests:
+      cpu: "0.5"
+      memory: 256Mi
+
+  healthCheck:
+    enabled: true
+    path: /health
+    port: 3000
+    initialDelaySeconds: 10
+    periodSeconds: 30
+
+  deploymentStrategy:
+    type: RollingUpdate
+    maxUnavailable: 0
+    maxSurge: 1
