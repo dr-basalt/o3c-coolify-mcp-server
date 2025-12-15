@@ -27,7 +27,7 @@ RUN addgroup -g 1001 -S appgroup && \
 
 # Copy package files and install production dependencies only
 COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+RUN npm ci --omit=dev && npm cache clean --force
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
@@ -38,18 +38,18 @@ RUN chown -R appuser:appgroup /app
 # Switch to non-root user
 USER appuser
 
-# Environment variables
+# Environment variables - Port 8080 for Coolify
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=8080
 ENV HOST=0.0.0.0
 ENV TRANSPORT=sse
 
 # Expose the port
-EXPOSE 3000
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:3000/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
 # Start the server
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.js", "--port", "8080"]
