@@ -7,9 +7,6 @@ services:
       dockerfile: Dockerfile
     image: o3c-coolify-mcp-server:latest
     restart: unless-stopped
-    # Don't expose ports directly - let Coolify/Traefik handle routing
-    # ports:
-    #   - "${PORT:-3000}:3000"
     expose:
       - "3000"
     environment:
@@ -27,44 +24,3 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.coolify-mcp.rule=Host(`${MCP_DOMAIN:-mcp.localhost}`)"
-      - "traefik.http.routers.coolify-mcp.entrypoints=websecure"
-      - "traefik.http.routers.coolify-mcp.tls=true"
-      - "traefik.http.routers.coolify-mcp.tls.certresolver=letsencrypt"
-      - "traefik.http.services.coolify-mcp.loadbalancer.server.port=3000"
-    networks:
-      - mcp-network
-
-  # Optional: Traefik reverse proxy for standalone deployment
-  traefik:
-    image: traefik:v3.0
-    restart: unless-stopped
-    profiles:
-      - with-traefik
-    command:
-      - "--api.dashboard=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge=true"
-      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL:-admin@example.com}"
-      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-letsencrypt:/letsencrypt
-    networks:
-      - mcp-network
-
-networks:
-  mcp-network:
-    driver: bridge
-
-volumes:
-  traefik-letsencrypt:
