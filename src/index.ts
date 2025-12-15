@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// Build: 2024-12-15-v2 - SSE + Streamable HTTP support
 import { program } from "commander";
 import { startServer } from "./server.js";
 import { logger } from "./utils/logger.js";
