@@ -38,18 +38,18 @@ RUN chown -R appuser:appgroup /app
 # Switch to non-root user
 USER appuser
 
-# Environment variables - Port 8080 for Coolify
+# Environment variables - Port 8082 for Coolify
 ENV NODE_ENV=production
-ENV PORT=8080
+ENV PORT=8082
 ENV HOST=0.0.0.0
 ENV TRANSPORT=sse
 
 # Expose the port
-EXPOSE 8080
+EXPOSE 8082
 
 # Health check - use 127.0.0.1 instead of localhost to force IPv4
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8080/health || exit 1
+    CMD wget --no-verbose --tries=1 --spider http://127.0.0.1:8082/health || exit 1
 
 # Start the server
-CMD ["node", "dist/index.js", "--port", "8080"]
+CMD ["node", "dist/index.js", "--port", "8082"]
